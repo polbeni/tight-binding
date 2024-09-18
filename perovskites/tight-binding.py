@@ -4,6 +4,7 @@
 # Tight binding model for a pervskite 3D system
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 def h_nm_element(t_nm, k_point, R_n, R_m1, R_m2):
     """
@@ -163,7 +164,9 @@ for x in range(14):
     for y in range(121):
         band.append(bands[y][x])
     correct_bands.append(band)
-import matplotlib.pyplot as plt
+
+
+# plot the resulting bands
 
 fig, ax = plt.subplots(figsize=(4, 3))
 ax.set_title('Tight Binding Perovskite TiO$_3$')
