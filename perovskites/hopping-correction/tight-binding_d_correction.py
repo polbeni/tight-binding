@@ -6,18 +6,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def t_correction(t_nm, distance_original, distance_distorted):
+def t_correction(t_nm, distance_distorted):
     """
     Correction to the hopping therms with the distance between atoms (related with the original distance)
 
     Inputs:
         t_nm: original hopping value for the hamiltonian component nm
-        distance_original: original distance (euclidean) between atoms (because symmetry of the problem will always be the same)
         distance_distorted: the new distance (euclidean) between the orbitals n and m (or n and m')
     """
 
-    fraction_of_change = distance_distorted / distance_original
-    change = 1.75 * np.exp(fraction_of_change - 1)
+    change = 5 * np.exp(-distance_distorted)
 
     t_nm_d = t_nm * change
 
@@ -37,17 +35,15 @@ def h_nm_element(t_nm, k_point, R_n, R_m1, R_m2, is_TiO):
     """
 
     if is_TiO == True:
-        original_distance = 0.5
-
         diff_R = R_n - R_m1
         escalar1 = np.dot(k_point, diff_R)
         dist1 = np.linalg.norm(diff_R)
-        corrected_t1 = t_correction(t_nm, original_distance, dist1)
+        corrected_t1 = t_correction(t_nm, dist1)
 
         diff_R = R_n - R_m2
         escalar2 = np.dot(k_point, diff_R)
         dist2 = np.linalg.norm(diff_R)
-        corrected_t2 = t_correction(t_nm, original_distance, dist2)
+        corrected_t2 = t_correction(t_nm, dist2)
 
 
         element = 0.5 * ((corrected_t1 * np.exp(1j * escalar1)) + (corrected_t2 * np.exp(1j * escalar2)))
@@ -70,9 +66,7 @@ def t_nm_element(n, m):
     If n == m, the function returns the energy (the same for all the electrons)
     """
 
-    #energy = [-4.0, -4.0, -4.0, -3.5, -3.5, -3.5, -3.0, -3.0, -3.0, -2, -2, -2, -2, -2]
     energy = [-4.0, -4.0, -4.0, -4.0, -4.0, -4.0, -4.0, -4.0, -4.0, -2, -2, -2, -2, -2]
-    #energy = [0]*14
     t_pp_bonding = 4
     t_pp_antibonding = -1
     t_pd_bonding = -1.6
@@ -107,16 +101,18 @@ def t_nm_element(n, m):
 
 
 # define the path in the reciprocal space
+a = 4 # lattice parameter
+
 band_points = 25
-k_intervals_up = np.linspace(0, np.pi, band_points)
-k_intervals_down = np.linspace(np.pi, 0, band_points)
+k_intervals_up = np.linspace(0, np.pi / a, band_points)
+k_intervals_down = np.linspace(np.pi / a, 0, band_points)
 k_path = []
 # gamma to X
 for x in range(band_points):
     k_path.append(np.array([0, k_intervals_up[x], 0]))
 # X to M
 for x in range(band_points - 1):
-    k_path.append(np.array([k_intervals_up[x + 1], np.pi, 0]))
+    k_path.append(np.array([k_intervals_up[x + 1], np.pi / a, 0]))
 # M to gamma
 for x in range(band_points - 1):
     k_path.append(np.array([k_intervals_down[x + 1], k_intervals_down[x + 1], 0]))
@@ -125,7 +121,7 @@ for x in range(band_points - 1):
     k_path.append(np.array([k_intervals_up[x + 1], k_intervals_up[x + 1], k_intervals_up[x + 1]]))
 # R to X
 for x in range(band_points - 1):
-    k_path.append(np.array([k_intervals_down[x + 1], np.pi, k_intervals_down[x + 1]]))
+    k_path.append(np.array([k_intervals_down[x + 1], np.pi / a, k_intervals_down[x + 1]]))
 
 num_k_points = 121
 k_points = np.linspace(0, 1, num_k_points)
@@ -142,13 +138,13 @@ for n in range(num_elements):
 #### ORIGINAL STRUCTURE ####
 
 # define the positions of the atoms (let's assume the cubic unit cell has size 1 (arbitraty units))
-R_O1 = np.array([0.5, 0.5, 0])
-R_O2 = np.array([0.5, 0, 0.5])
-R_O3 = np.array([0, 0.5, 0.5])
-R_Ti = np.array([0.5, 0.5, 0.5])
-R_O4 = np.array([0.5, 0.5, 1])
-R_O5 = np.array([0.5, 1, 0.5])
-R_O6 = np.array([1, 0.5, 0.5])
+R_O1 = np.array([0.5, 0.5, 0]) * a
+R_O2 = np.array([0.5, 0, 0.5]) * a
+R_O3 = np.array([0, 0.5, 0.5]) * a
+R_Ti = np.array([0.5, 0.5, 0.5]) * a
+R_O4 = np.array([0.5, 0.5, 1]) * a
+R_O5 = np.array([0.5, 1, 0.5]) * a
+R_O6 = np.array([1, 0.5, 0.5]) * a
 
 # create the hamiltionan matrix
 hamiltonian = np.zeros((num_elements, num_elements), dtype=complex)
@@ -181,11 +177,11 @@ for k_point in k_path:
             else:
                 R_m1 = R_Ti
                 if n in [0, 1, 2]:
-                    R_m2 = np.array([0.5, 0.5, -0.5])
+                    R_m2 = np.array([0.5, 0.5, -0.5]) * a
                 elif n in [3, 4, 5]:
-                    R_m2 = np.array([0.5, -0.5, 0.5])
+                    R_m2 = np.array([0.5, -0.5, 0.5]) * a
                 elif n in [6, 7, 8]:
-                    R_m2 = np.array([-0.5, 0.5, 0.5])
+                    R_m2 = np.array([-0.5, 0.5, 0.5]) * a
 
             if n == m:
                 hamiltonian[n, m] = hopping_matrix[n, m]
@@ -214,13 +210,13 @@ for x in range(14):
 #### DISTORTED STRUCTURE ####
 
 # define the positions of the atoms (let's assume the cubic unit cell has size 1 (arbitraty units))
-R_O1 = np.array([0.5, 0.5, 0])
-R_O2 = np.array([0.5, 0, 0.5])
-R_O3 = np.array([0, 0.5, 0.5])
-R_Ti = np.array([0.5, 0.5, 0.25])
-R_O4 = np.array([0.5, 0.5, 1])
-R_O5 = np.array([0.5, 1, 0.5])
-R_O6 = np.array([1, 0.5, 0.5])
+R_O1 = np.array([0.5, 0.5, 0]) * a
+R_O2 = np.array([0.5, 0, 0.5]) * a
+R_O3 = np.array([0, 0.5, 0.5]) * a
+R_Ti = np.array([0.5, 0.5, 0.25]) * a
+R_O4 = np.array([0.5, 0.5, 1]) * a
+R_O5 = np.array([0.5, 1, 0.5]) * a
+R_O6 = np.array([1, 0.5, 0.5]) * a
 
 # create the hamiltionan matrix
 hamiltonian = np.zeros((num_elements, num_elements), dtype=complex)
@@ -253,11 +249,11 @@ for k_point in k_path:
             else:
                 R_m1 = R_Ti
                 if n in [0, 1, 2]:
-                    R_m2 = np.array([0.5, 0.5, -0.75])
+                    R_m2 = np.array([0.5, 0.5, -0.75]) * a
                 elif n in [3, 4, 5]:
-                    R_m2 = np.array([0.5, -0.5, 0.5])
+                    R_m2 = np.array([0.5, -0.5, 0.5]) * a
                 elif n in [6, 7, 8]:
-                    R_m2 = np.array([-0.5, 0.5, 0.5])
+                    R_m2 = np.array([-0.5, 0.5, 0.5]) * a
 
             if n == m:
                 hamiltonian[n, m] = hopping_matrix[n, m]
@@ -309,7 +305,7 @@ for band in correct_bands_distorted:
     it = it + 1
 
 ax.set_xlim(0, 1)
-ax.set_ylim(-17.5, 27.5)
+#ax.set_ylim(-17.5, 27.5)
 
 x_ticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
 x_labels = ['$\\Gamma$', 'X', 'M', '$\\Gamma$', 'R', 'X']
@@ -320,5 +316,5 @@ ax.legend(frameon=False)
 plt.tight_layout()
 plt.savefig('bands.pdf')
 
-ax.set_ylim(-5, 25)
+#ax.set_ylim(-5, 25)
 plt.savefig('bands-zoom.pdf')
