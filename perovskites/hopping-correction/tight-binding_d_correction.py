@@ -305,7 +305,7 @@ for band in correct_bands_distorted:
     it = it + 1
 
 ax.set_xlim(0, 1)
-#ax.set_ylim(-17.5, 27.5)
+ax.set_ylim(-15, 15)
 
 x_ticks = [0, 0.2, 0.4, 0.6, 0.8, 1]
 x_labels = ['$\\Gamma$', 'X', 'M', '$\\Gamma$', 'R', 'X']
@@ -316,5 +316,5 @@ ax.legend(frameon=False)
 plt.tight_layout()
 plt.savefig('bands.pdf')
 
-#ax.set_ylim(-5, 25)
+ax.set_ylim(-5, 15)
 plt.savefig('bands-zoom.pdf')
